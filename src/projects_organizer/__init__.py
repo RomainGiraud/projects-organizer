@@ -8,6 +8,8 @@ import frontmatter
 import jsonschema
 import yaml
 
+__version__ = "0.1.0"
+
 app = typer.Typer(pretty_exceptions_enable=False)
 state = {}
 err_console = Console(stderr=True)
