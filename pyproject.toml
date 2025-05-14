@@ -11,8 +11,7 @@ dependencies = [
   "rich>=14.0.0",
   "typer>=0.15.3",
 ]
-#dynamic = ["version"]
-version = "0.1.0"
+dynamic = ["version", "urls"]
 
 [project.scripts]
 projects-organizer = "projects_organizer:main"
@@ -24,11 +23,15 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = ["python-semantic-release>=9.21.1"]
 
-#[tool.hatch.version]
-#path = "src/projects_organizer/__init__.py"
+[tool.hatch.version]
+path = "src/projects_organizer/__init__.py"
 
 [tool.semantic_release]
+branch = "main"
 version_variable = ["pyproject.toml:project.version"]
 build_command = "uv build"
+version_variables = ["src/projects_organizer/__init__.py:__version__"]
 #version_toml = ["pyproject.toml:project.version"]
-#version_variables = ["src/projects_organizer/__init__.py:__version__"]
+
+#[tool.semantic_release.remote]
+#token = "GH_TOKEN"
