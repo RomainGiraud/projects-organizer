@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Optional
 from typing_extensions import Annotated
 from datetime import datetime
 import ast
@@ -165,9 +166,16 @@ def validate(schema: str,
                 print(f"- {title}: {error}")
         raise typer.Exit(code=1)
 
+def version_callback(value: bool):
+    if value:
+        print(f"projects-organizer {__version__}")
+        raise typer.Exit()
+
 @app.callback()
 def main_options(verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
-                 base_dir: Annotated[Path, typer.Option("--base_dir", "-d")] = Path(".")):
+                 base_dir: Annotated[Path, typer.Option("--base_dir", "-d")] = Path("."),
+                 version: Annotated[Optional[bool], typer.Option("--version", callback=version_callback)] = None,
+                 ):
     state["verbose"] = verbose
     state["base_dir"] = base_dir
     init()
