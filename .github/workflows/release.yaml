@@ -3,15 +3,13 @@ name: release
 on:
   push:
     branches: [ main ]
-  pull_request:
-    branches: [ main ]
 
 permissions:
   id-token: write
   contents: write
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
 
     steps:
@@ -70,27 +68,27 @@ jobs:
 
           printf '%s\n' "Verified upstream branch has not changed, continuing with release..."
 
-      - name: Install uv
+      - name: Install | uv
         uses: astral-sh/setup-uv@v5
 
-      - name: Set up Python
+      - name: Install | Python
         uses: actions/setup-python@v5
         with:
           python-version-file: "pyproject.toml"
 
-      - name: Install the project
+      - name: Install | project
         run: uv sync --locked --all-extras --dev
 
-      - name: Run semantic-release
+      - name: Release
         id: release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run semantic-release --strict version
 
-      - name: Publish to Releases
+      - name: Publish | GitHub
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: uv run semantic-release publish
 
-      - name: Publish to PyPI
+      - name: Publish | PyPI
         run: uv publish
