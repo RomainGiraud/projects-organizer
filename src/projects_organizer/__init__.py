@@ -1,27 +1,47 @@
 from pathlib import Path
-from typing import Optional
+from typing import TypedDict, Any, cast
 from typing_extensions import Annotated
+from types import CodeType
 from datetime import datetime
 import ast
 import typer
 from rich.console import Console
 import frontmatter
 import jsonschema
+from jsonschema.exceptions import ValidationError
 import yaml
 
 __version__ = "0.1.0"
 
 app = typer.Typer(pretty_exceptions_enable=False)
-state = {}
+
+
+class State(TypedDict):
+    verbose: bool
+    base_dir: Path
+
+
+state: State = {
+    "verbose": False,
+    "base_dir": Path("."),
+}
+
 err_console = Console(stderr=True)
 
 MD_FILE_DEFAULT = "index.md"
 
-projects = {}
+
+class Project(TypedDict):
+    file: Path
+    metadata: dict[str, Any]  # pyright: ignore[reportExplicitAny]
+    content: str
+
+
+projects: dict[str, Project] = {}
 
 
 def init():
-    md_files = []
+    md_files: list[Path] = []
     for file in state["base_dir"].glob("*"):
         if file.is_dir():
             full_path = file.resolve() / MD_FILE_DEFAULT
@@ -33,7 +53,7 @@ def init():
     for file in md_files:
         with open(file, "r") as f:
             metadata, content = frontmatter.parse(f.read())
-            title = metadata["title"]
+            title = cast(str, metadata["title"])
             if title in projects:
                 raise RuntimeError(
                     f"Duplicate project title: {title} in {projects[title]['file']} and {file}"
@@ -45,12 +65,9 @@ def init():
             }
 
 
-def parse_filter(filter: str):
+def parse_filter(filter: str) -> tuple[CodeType, set[str]]:
     parsed = ast.parse(filter, mode="eval")
     # print(ast.dump(parsed, indent=4))
-
-    if not isinstance(parsed, ast.Expression):
-        raise RuntimeError(f"Invalid filter: {filter}")
 
     if (
         not isinstance(parsed.body, ast.BoolOp)
@@ -62,12 +79,12 @@ def parse_filter(filter: str):
 
         final = ast.BoolOp(op=ast.And(), values=[parsed.body, ast.Constant(value=True)])
         parsed.body = ast.copy_location(final, parsed.body)
-        ast.fix_missing_locations(parsed)
+        parsed = ast.fix_missing_locations(parsed)
 
     # print(f"comparison: {ast.dump(parsed, indent=4)}")
     compiled = compile(parsed, filename="<ast>", mode="eval")
 
-    variables = set()
+    variables: set[str] = set()
     for node in ast.walk(parsed):
         if isinstance(node, ast.Name):
             variables.add(node.id)
@@ -85,8 +102,8 @@ def parse_filter(filter: str):
     return compiled, variables
 
 
-@app.command()
-def list(
+@app.command("list")
+def list_projects(
     highlighted: Annotated[
         bool, typer.Option("--highlighted", "-h", help="Show only highlighted projects")
     ] = False,
@@ -97,25 +114,25 @@ def list(
         bool, typer.Option("--draft", "-d", help="Show only draft projects")
     ] = False,
     filter: Annotated[
-        str, typer.Option("--filter", "-f", help="Filter by element")
+        str | None, typer.Option("--filter", "-f", help="Filter by element")
     ] = None,
 ):
     for p in projects.values():
         if state["verbose"]:
             print(f"Processing {p['file']}")
 
-        if highlighted and not p["metadata"].get("highlight", False):
+        if highlighted and not cast(bool, p["metadata"].get("highlighted", False)):
             continue
 
-        if archived and not p["metadata"].get("archived", False):
+        if archived and not cast(bool, p["metadata"].get("archived", False)):
             continue
 
-        if draft and not p["metadata"].get("draft", False):
+        if draft and not cast(bool, p["metadata"].get("draft", False)):
             continue
 
         if filter is not None:
             compiled, variables = parse_filter(filter)
-            context = {}
+            context: dict[str, Any] = {}  # pyright: ignore[reportExplicitAny]
             for v in variables:
                 if v == "datetime":
                     context[v] = datetime
@@ -125,7 +142,7 @@ def list(
                     # raise RuntimeError(f"Variable {v} not found in {p['file']}")
                 else:
                     context[v] = p["metadata"][v]
-            result = eval(compiled, {}, context)
+            result = cast(bool, eval(compiled, None, context))
             if not result:
                 continue
 
@@ -134,10 +151,11 @@ def list(
 
 @app.command()
 def show(name: str):
-    selected = []
+    selected: list[str] = []
     for p in projects.values():
-        if name.lower() in p["metadata"]["title"].lower():
-            selected.append(p["metadata"]["title"])
+        title = cast(str, p["metadata"]["title"])
+        if name.lower() in title.lower():
+            selected.append(title)
 
     if len(selected) == 0:
         raise RuntimeError(f"Project {name} not found.")
@@ -167,13 +185,14 @@ def validate(
     ] = False,
 ):
     with open(schema, "r") as f:
-        sc = yaml.safe_load(f.read())
-    invalid = {}
+        sc = yaml.safe_load(f.read())  # pyright: ignore[reportAny]
+    invalid: dict[str, str] = {}
     for p in projects.values():
         try:
-            jsonschema.validate(p["metadata"], sc)
-        except jsonschema.exceptions.ValidationError as e:
-            invalid[p["metadata"]["title"]] = e
+            jsonschema.validate(p["metadata"], sc)  # pyright: ignore[reportAny]
+        except ValidationError as e:
+            title = cast(str, p["metadata"]["title"])
+            invalid[title] = e.message
     if len(invalid) == 0:
         print("All projects are valid.")
     else:
@@ -196,10 +215,10 @@ def version_callback(value: bool):
 
 @app.callback()
 def main_options(
-    verbose: Annotated[bool, typer.Option("--verbose", "-v")] = False,
-    base_dir: Annotated[Path, typer.Option("--base_dir", "-d")] = Path("."),
-    version: Annotated[
-        Optional[bool], typer.Option("--version", callback=version_callback)
+    verbose: Annotated[bool, typer.Option("--verbose", "-v")] = state["verbose"],
+    base_dir: Annotated[Path, typer.Option("--base_dir", "-d")] = state["base_dir"],
+    version: Annotated[  # pyright: ignore[reportUnusedParameter]
+        bool | None, typer.Option("--version", callback=version_callback)
     ] = None,
 ):
     state["verbose"] = verbose

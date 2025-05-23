@@ -35,3 +35,6 @@ jobs:
 
       - name: Test | format
         run: uv run --locked ruff format --check
+
+      - name: Test | basedpyright
+        run: uv run --locked basedpyright

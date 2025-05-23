@@ -22,8 +22,9 @@ build-backend = "hatchling.build"
 
 [dependency-groups]
 dev = [
-    "python-semantic-release>=9.21.1",
-    "ruff>=0.11.10",
+  "basedpyright>=1.29.2",
+  "python-semantic-release>=9.21.1",
+  "ruff>=0.11.10",
 ]
 
 [tool.hatch.version]
@@ -38,3 +39,6 @@ version_variables = ["src/projects_organizer/__init__.py:__version__"]
 
 #[tool.semantic_release.remote]
 #token = "GH_TOKEN"
+
+[tool.basedpyright]
+include = ["src"]
