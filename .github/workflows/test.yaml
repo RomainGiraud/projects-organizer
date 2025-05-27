@@ -40,4 +40,4 @@ jobs:
         run: uv run --locked basedpyright
 
       - name: Test | pytest
-        run: uv run --locked pytest -v -s
+        run: uv run --locked pytest
