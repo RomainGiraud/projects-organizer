@@ -23,6 +23,7 @@ build-backend = "hatchling.build"
 [dependency-groups]
 dev = [
   "basedpyright>=1.29.2",
+  "pytest>=8.3.5",
   "python-semantic-release>=9.21.1",
   "ruff>=0.11.10",
 ]
@@ -42,3 +43,7 @@ version_variables = ["src/projects_organizer/__init__.py:__version__"]
 
 [tool.basedpyright]
 include = ["src"]
+
+[tool.pytest.ini_options]
+addopts = ["--import-mode=importlib"]
+pythonpath = "src"

@@ -13,8 +13,6 @@ import yaml
 
 __version__ = "0.1.0"
 
-app = typer.Typer(pretty_exceptions_enable=False)
-
 
 class State(TypedDict):
     verbose: bool
@@ -26,10 +24,6 @@ state: State = {
     "base_dir": Path("."),
 }
 
-err_console = Console(stderr=True)
-
-MD_FILE_DEFAULT = "index.md"
-
 
 class Project(TypedDict):
     file: Path
@@ -38,6 +32,22 @@ class Project(TypedDict):
 
 
 projects: dict[str, Project] = {}
+
+
+def cleanup(
+    executed_command_result: bool,  # pyright: ignore[reportUnusedParameter]
+    base_dir: Path,  # pyright: ignore[reportUnusedParameter]
+    verbose: bool,  # pyright: ignore[reportUnusedParameter]
+    version: str,  # pyright: ignore[reportUnusedParameter]
+):
+    global projects
+    projects.clear()
+
+
+app = typer.Typer(pretty_exceptions_enable=False, result_callback=cleanup)
+err_console = Console(stderr=True)
+
+MD_FILE_DEFAULT = "index.md"
 
 
 def init():

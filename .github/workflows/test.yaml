@@ -38,3 +38,6 @@ jobs:
 
       - name: Test | basedpyright
         run: uv run --locked basedpyright
+
+      - name: Test | pytest
+        run: uv run --locked pytest -v -s
