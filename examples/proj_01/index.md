@@ -1,6 +1,6 @@
 ---
 title: "Project 01"
-created_at: 2025-01-01
+created_at: "2025-01-01"
 technologies:
   - C++
 ---
