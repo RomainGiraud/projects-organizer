@@ -202,7 +202,11 @@ def main_options(
     ] = None,
 ):
     state["verbose"] = verbose
+
+    if not base_dir.exists() and not base_dir.is_dir():
+        log_error(f"Base directory {base_dir} does not exist or is not a directory.")
     state["base_dir"] = base_dir
+
     init()
 
 
