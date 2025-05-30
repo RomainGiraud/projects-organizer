@@ -101,38 +101,22 @@ def parse_filter(filter: str) -> tuple[CodeType, set[str]]:
 
 @app.command("list")
 def list_projects(
-    highlighted: Annotated[
-        bool, typer.Option("--highlighted", "-h", help="Show only highlighted projects")
-    ] = False,
-    archived: Annotated[
-        bool, typer.Option("--archived", "-a", help="Show only archived projects")
-    ] = False,
-    draft: Annotated[
-        bool, typer.Option("--draft", "-d", help="Show only draft projects")
-    ] = False,
     filter: Annotated[
         str | None, typer.Option("--filter", "-f", help="Filter by element")
     ] = None,
 ):
+    if filter is not None:
+        compiled, variables = parse_filter(filter)
+
     for p in projects.values():
-        if highlighted and not cast(bool, p["metadata"].get("highlighted", False)):
-            continue
-
-        if archived and not cast(bool, p["metadata"].get("archived", False)):
-            continue
-
-        if draft and not cast(bool, p["metadata"].get("draft", False)):
-            continue
-
         if filter is not None:
-            compiled, variables = parse_filter(filter)
             context: dict[str, Any] = {}  # pyright: ignore[reportExplicitAny]
             for v in variables:
-                if v == "datetime":
+                if v == "datetime": # import datetime if used
                     context[v] = datetime
                     continue
                 if v not in p["metadata"]:
-                    context[v] = False
+                    context[v] = ""
                 else:
                     context[v] = p["metadata"][v]
             result = cast(bool, eval(compiled, None, context))
