@@ -37,6 +37,10 @@ projects: dict[str, Project] = {}
 app = typer.Typer(pretty_exceptions_enable=False)
 err_console = Console(stderr=True)
 
+def log_error(msg: str, exit_code: int = 1):
+    err_console.print(f"[red]error[/red]: {msg}")
+    raise typer.Exit(code=exit_code)
+
 MD_FILE_DEFAULT = "index.md"
 
 
@@ -46,7 +50,7 @@ def init():
         if file.is_dir():
             full_path = file.resolve() / MD_FILE_DEFAULT
             if not full_path.exists() or not full_path.is_file():
-                raise RuntimeError(f"Missing {MD_FILE_DEFAULT} in {file}")
+                log_error(f"Missing {MD_FILE_DEFAULT} in {file}")
             md_files.append(full_path)
     md_files = sorted(md_files)
 
@@ -56,7 +60,7 @@ def init():
             metadata, content = frontmatter.parse(f.read())
             title = cast(str, metadata["title"])
             if title in projects:
-                raise RuntimeError(
+                log_error(
                     f"Duplicate project title: {title} in {projects[title]['file']} and {file}"
                 )
             projects[title] = {
@@ -76,7 +80,7 @@ def parse_filter(filter: str) -> tuple[CodeType, set[str]]:
         and not isinstance(parsed.body, ast.Name)
     ):
         if not isinstance(parsed.body, ast.Compare):
-            raise RuntimeError(f"Invalid filter: {filter}")
+            log_error(f"Invalid filter: {filter}")
 
         final = ast.BoolOp(op=ast.And(), values=[parsed.body, ast.Constant(value=True)])
         parsed.body = ast.copy_location(final, parsed.body)
@@ -140,7 +144,6 @@ def list_projects(
                     continue
                 if v not in p["metadata"]:
                     context[v] = False
-                    # raise RuntimeError(f"Variable {v} not found in {p['file']}")
                 else:
                     context[v] = p["metadata"][v]
             result = cast(bool, eval(compiled, None, context))
@@ -159,7 +162,7 @@ def show(name: str):
             selected.append(title)
 
     if len(selected) == 0:
-        raise RuntimeError(f"Project {name} not found.")
+        log_error(f"Project {name} not found.")
 
     found = None
     for s in selected:
