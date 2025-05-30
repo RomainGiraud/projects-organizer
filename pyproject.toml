@@ -14,7 +14,7 @@ dependencies = [
 dynamic = ["version", "urls"]
 
 [project.scripts]
-projects-organizer = "projects_organizer:main"
+projects-organizer = "projects_organizer:app"
 
 [build-system]
 requires = ["hatchling"]

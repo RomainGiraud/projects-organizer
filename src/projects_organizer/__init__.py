@@ -34,17 +34,7 @@ class Project(TypedDict):
 projects: dict[str, Project] = {}
 
 
-def cleanup(
-    executed_command_result: bool,  # pyright: ignore[reportUnusedParameter]
-    base_dir: Path,  # pyright: ignore[reportUnusedParameter]
-    verbose: bool,  # pyright: ignore[reportUnusedParameter]
-    version: str,  # pyright: ignore[reportUnusedParameter]
-):
-    global projects
-    projects.clear()
-
-
-app = typer.Typer(pretty_exceptions_enable=False, result_callback=cleanup)
+app = typer.Typer(pretty_exceptions_enable=False)
 err_console = Console(stderr=True)
 
 MD_FILE_DEFAULT = "index.md"
@@ -60,6 +50,7 @@ def init():
             md_files.append(full_path)
     md_files = sorted(md_files)
 
+    projects.clear()
     for file in md_files:
         with open(file, "r") as f:
             metadata, content = frontmatter.parse(f.read())
@@ -236,12 +227,5 @@ def main_options(
     init()
 
 
-def main() -> None:
-    try:
-        app()
-    except RuntimeError as e:
-        err_console.print(f"[red]error[/red]: {e}")
-
-
 if __name__ == "__main__":
-    main()
+    app() # pragma: no cover
