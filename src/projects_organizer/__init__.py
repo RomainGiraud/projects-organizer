@@ -76,7 +76,6 @@ def init():
 
 def parse_filter(filter: str) -> tuple[CodeType, set[str]]:
     parsed = ast.parse(filter, mode="eval")
-    # print(ast.dump(parsed, indent=4))
 
     if (
         not isinstance(parsed.body, ast.BoolOp)
@@ -90,23 +89,12 @@ def parse_filter(filter: str) -> tuple[CodeType, set[str]]:
         parsed.body = ast.copy_location(final, parsed.body)
         parsed = ast.fix_missing_locations(parsed)
 
-    # print(f"comparison: {ast.dump(parsed, indent=4)}")
     compiled = compile(parsed, filename="<ast>", mode="eval")
 
     variables: set[str] = set()
     for node in ast.walk(parsed):
         if isinstance(node, ast.Name):
             variables.add(node.id)
-    # print(f"variables: {variables}")
-
-    # check_code = []
-    # for v in variables:
-    #    check_code.append(f'if "{v}" not in locals():\n  {v} = False')
-    # check_code = '\n'.join(check_code)
-    # print(check_code)
-    # check_expr = ast.parse(check_code, mode='eval')
-    # ast.fix_missing_locations(check_expr)
-    # print(check_expr)
 
     return compiled, variables
 
@@ -172,7 +160,7 @@ def show(name: str):
 
     if len(selected) > 1:
         if found is None:
-            print(f"Multiple projects found: {', '.join([p for p in selected])}")
+            print(f"Many projects found: {', '.join([p for p in selected])}")
             return
     else:
         found = selected[0]
@@ -210,6 +198,8 @@ def validate(
             for title, error in invalid.items():
                 print(f"- {title}: {error}")
         raise typer.Exit(code=1)
+
+    print("All projects are valid.")
 
 
 def version_callback(value: bool):
