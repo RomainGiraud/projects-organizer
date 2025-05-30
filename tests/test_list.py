@@ -3,50 +3,46 @@ from projects_organizer import app
 from typer.testing import CliRunner
 import yaml
 
-projects = {
-    "project1": {
-        "title": "Project 1",
-        "archived": True,
-    },
-    "project2": {
-        "title": "Project 2",
-    },
-    "project3": {
-        "title": "Project 3",
-    },
-}
-
-
-@pytest.fixture(scope="session")
-def projects_dir(tmp_path_factory):
-    p_dir = tmp_path_factory.mktemp("projects")
-    print(p_dir)
-    for name, data in projects.items():
-        (p_dir / name).mkdir()
-        with open(p_dir / name / "index.md", "w") as f:
-            f.write("---\n")
-            f.write(
-                yaml.dump(data, indent=2, default_flow_style=False, sort_keys=False)
-            )
-            f.write("---\n")
-            f.write("My description")
-    return p_dir
-
 
 def test_list_basic(projects_dir):
     runner = CliRunner()
     test_args = ["-d", projects_dir, "list"]
-    print(test_args)
     result = runner.invoke(app, test_args)
-    print(result)
-    output = result.stdout
-    print(output)
-    assert output == "- Project 1\n- Project 2\n- Project 3\n"
     assert result.exit_code == 0
+    assert result.stdout == "- Project 1\n- Project 2\n- Project 3\n"
 
 
-# @pytest.mark.parametrize("projects_dir,filter,expected", [("projects_dir", 'not archived', "- project1\n- project2\n- project3\n")])
-# def test_list_filter(projects_dir, filter, expected, request):
+def test_list_basic_verbose(projects_dir):
+    runner = CliRunner()
+    test_args = ["-d", projects_dir, "-v", "list"]
+    result = runner.invoke(app, test_args)
+    assert result.exit_code == 0
+    assert result.stdout == f"""Initializing projects from {str(projects_dir)}
+Reading file {str(projects_dir / 'project1' / 'index.md')}
+Reading file {str(projects_dir / 'project2' / 'index.md')}
+Reading file {str(projects_dir / 'project3' / 'index.md')}
+- Project 1
+- Project 2
+- Project 3
+"""
+
+
+def test_list_empty_project(projects_dir_empty_project):
+    runner = CliRunner()
+    test_args = ["-d", projects_dir_empty_project, "list"]
+    result = runner.invoke(app, test_args)
+    assert result.exit_code == 1
+    assert "missing index.md in" in result.stdout.lower()
+
+
+def test_list_duplicate_project(projects_dir_duplicate_project):
+    runner = CliRunner()
+    test_args = ["-d", projects_dir_duplicate_project, "list"]
+    result = runner.invoke(app, test_args)
+    assert result.exit_code == 1
+    assert "duplicate project title" in result.stdout.lower()
+
+
 @pytest.mark.parametrize(
     "filter,expected",
     [
@@ -54,17 +50,22 @@ def test_list_basic(projects_dir):
         ("not unknown", "- Project 1\n- Project 2\n- Project 3\n"),
         ("archived", "- Project 1\n"),
         ("not archived", "- Project 2\n- Project 3\n"),
+        ("'dev' in tags", "- Project 1\n- Project 2\n- Project 3\n"),
+        ("'python' in tags", "- Project 1\n- Project 3\n"),
+        ("datetime.strptime(created_at, '%Y-%m-%d') >= datetime(2024, 1, 1)", "- Project 2\n- Project 3\n"),
     ],
 )
 def test_list_filter(filter, expected, projects_dir):
     runner = CliRunner()
-    # dir = request.getfixturevalue(projects_dir)
-    # test_args = ['-d', dir, 'list', '-f', filter]
     test_args = ["-d", projects_dir, "list", "-f", filter]
-    print(test_args)
     result = runner.invoke(app, test_args)
-    print(result)
-    output = result.stdout
-    print(output)
-    assert output == expected
     assert result.exit_code == 0
+    assert result.stdout == expected
+
+
+def test_list_filter_invalid(projects_dir):
+    runner = CliRunner(mix_stderr=False)
+    test_args = ["-d", projects_dir, "list", "-f", "1 + 2"]
+    result = runner.invoke(app, test_args)
+    assert result.exit_code != 0
+    assert len(result.stderr) != 0
