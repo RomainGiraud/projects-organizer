@@ -8,7 +8,7 @@ import typer
 from rich.console import Console
 import frontmatter
 import jsonschema
-from jsonschema.exceptions import ValidationError
+from jsonschema.exceptions import ValidationError, SchemaError
 import yaml
 
 __version__ = "0.2.0"
@@ -163,6 +163,7 @@ def validate(
 ):
     with open(schema, "r") as f:
         sc = yaml.safe_load(f.read())  # pyright: ignore[reportAny]
+
     invalid: dict[str, str] = {}
     for p in projects.values():
         try:
@@ -170,14 +171,14 @@ def validate(
         except ValidationError as e:
             title = cast(str, p["metadata"]["title"])
             invalid[title] = e.message
-    if len(invalid) == 0:
-        print("All projects are valid.")
-    else:
+        except SchemaError as e:
+            log_error(f"Invalid schema: {e}")
+
+    if len(invalid) != 0:
         if stop_on_error:
             title, error = next(iter(invalid.items()))
             print(f"error for project {title}")
             print(error)
-            pass
         else:
             for title, error in invalid.items():
                 print(f"- {title}: {error}")
