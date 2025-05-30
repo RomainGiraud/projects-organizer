@@ -45,6 +45,8 @@ MD_FILE_DEFAULT = "index.md"
 
 
 def init():
+    if state["verbose"]:
+        print(f"Initializing projects from {state['base_dir']}")
     md_files: list[Path] = []
     for file in state["base_dir"].glob("*"):
         if file.is_dir():
@@ -56,6 +58,8 @@ def init():
 
     projects.clear()
     for file in md_files:
+        if state["verbose"]:
+            print(f"Reading file {file}")
         with open(file, "r") as f:
             metadata, content = frontmatter.parse(f.read())
             title = cast(str, metadata["title"])
@@ -123,9 +127,6 @@ def list_projects(
     ] = None,
 ):
     for p in projects.values():
-        if state["verbose"]:
-            print(f"Processing {p['file']}")
-
         if highlighted and not cast(bool, p["metadata"].get("highlighted", False)):
             continue
 
