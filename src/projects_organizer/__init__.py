@@ -156,7 +156,7 @@ def show(name: str):
 
 @app.command()
 def validate(
-    schema: str,
+    schema: Path,
     stop_on_error: Annotated[
         bool, typer.Option("--stop-on-error", "-s", help="Stop on first error")
     ] = False,
