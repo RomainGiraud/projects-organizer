@@ -37,9 +37,10 @@ projects: dict[str, Project] = {}
 app = typer.Typer(pretty_exceptions_enable=False)
 err_console = Console(stderr=True)
 
-def log_error(msg: str, exit_code: int = 1):
-    err_console.print(f"[red]error[/red]: {msg}")
-    raise typer.Exit(code=exit_code)
+error_code = 1
+errors = []
+def log_error(msg: str):
+    errors.append(msg)
 
 MD_FILE_DEFAULT = "index.md"
 
@@ -53,7 +54,12 @@ def init():
             full_path = file.resolve() / MD_FILE_DEFAULT
             if not full_path.exists() or not full_path.is_file():
                 log_error(f"Missing {MD_FILE_DEFAULT} in {file}")
+                continue
             md_files.append(full_path)
+
+    if len(errors) != 0:
+        return False
+
     md_files = sorted(md_files)
 
     projects.clear()
@@ -67,11 +73,17 @@ def init():
                 log_error(
                     f"Duplicate project title: {title} in {projects[title]['file']} and {file}"
                 )
+                continue
             projects[title] = {
                 "file": file,
                 "metadata": metadata,
                 "content": content,
             }
+
+    if len(errors) != 0:
+        return False
+
+    return True
 
 
 def parse_filter(filter: str) -> tuple[CodeType, set[str]]:
@@ -207,7 +219,10 @@ def main_options(
         log_error(f"Base directory {base_dir} does not exist or is not a directory.")
     state["base_dir"] = base_dir
 
-    init()
+    if not init():
+        for e in errors:
+            err_console.print(f"[red]error[/red]: {e}")
+        raise typer.Exit(code=error_code)
 
 
 if __name__ == "__main__":
