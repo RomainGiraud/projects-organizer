@@ -11,7 +11,7 @@ import jsonschema
 from jsonschema.exceptions import ValidationError, SchemaError
 import yaml
 
-__version__ = "0.2.0"
+__version__ = "0.3.0"
 
 
 class State(TypedDict):
