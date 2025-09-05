@@ -33,7 +33,6 @@ class Project(TypedDict):
 
 projects: dict[str, Project] = {}
 
-
 app = typer.Typer(pretty_exceptions_enable=False)
 err_console = Console(stderr=True)
 
@@ -93,7 +92,11 @@ def parse_filter(filter: str | None) -> tuple[CodeType, set[str]] | tuple[None, 
     if filter is None:
         return None, None
 
-    parsed = ast.parse(filter, mode="eval")
+    try:
+        parsed = ast.parse(filter, mode="eval")
+    except SyntaxError as e:
+        log_error(f"Invalid filter: {e}")
+        raise ValueError("Invalid filter")
 
     if (
         not isinstance(parsed.body, ast.BoolOp)
@@ -102,6 +105,7 @@ def parse_filter(filter: str | None) -> tuple[CodeType, set[str]] | tuple[None, 
     ):
         if not isinstance(parsed.body, ast.Compare):
             log_error(f"Invalid filter: {filter}")
+            raise ValueError("Invalid filter")
 
         final = ast.BoolOp(op=ast.And(), values=[parsed.body, ast.Constant(value=True)])
         parsed.body = ast.copy_location(final, parsed.body)
@@ -123,7 +127,10 @@ def list_projects(
         str | None, typer.Option("--filter", "-f", help="Filter by element")
     ] = None,
 ):
-    compiled, variables = parse_filter(filter)
+    try:
+        compiled, variables = parse_filter(filter)
+    except Exception:
+        return False
 
     for p in projects.values():
         if compiled is not None and variables is not None:
@@ -162,9 +169,11 @@ def show(name: str):
     if len(selected) > 1:
         if found is None:
             print(f"Many projects found: {', '.join([p for p in selected])}")
-            return
-    else:
+            return False
+    elif len(selected) == 1:
         found = selected[0]
+    else:
+        return False
 
     if state["verbose"]:
         print(f"Project found: {projects[found]['file']}")
@@ -190,6 +199,7 @@ def validate(
             invalid[title] = e.message
         except SchemaError as e:
             log_error(f"Invalid schema: {e}")
+            return False
 
     if len(invalid) != 0:
         if stop_on_error:
@@ -199,7 +209,10 @@ def validate(
         else:
             for title, error in invalid.items():
                 print(f"- {title}: {error}")
-        raise typer.Exit(code=1)
+        return False
+
+    if len(errors) != 0:
+        return False
 
     print("All projects are valid.")
 
@@ -210,7 +223,24 @@ def version_callback(value: bool):
         raise typer.Exit()
 
 
-@app.callback()
+def result_cb(
+    executed_command_result: Any,  # pyright: ignore[reportAny, reportExplicitAny]
+    verbose: bool,  # pyright: ignore[reportUnusedParameter]
+    base_dir: Path,  # pyright: ignore[reportUnusedParameter]
+    version: bool,  # pyright: ignore[reportUnusedParameter]
+):
+    projects.clear()
+    if len(errors) != 0:
+        for e in errors:
+            err_console.print(f"[red]error[/red]: {e}")
+        errors.clear()
+        raise typer.Exit(code=error_code)
+
+    if executed_command_result is not None and executed_command_result is not True:
+        raise typer.Exit(code=1)
+
+
+@app.callback(result_callback=result_cb)
 def main_options(
     verbose: Annotated[bool, typer.Option("--verbose", "-v")] = state["verbose"],
     base_dir: Annotated[Path, typer.Option("--base_dir", "-d")] = state["base_dir"],
@@ -219,15 +249,15 @@ def main_options(
     ] = None,
 ):
     state["verbose"] = verbose
-
-    if not base_dir.exists() and not base_dir.is_dir():
-        log_error(f"Base directory {base_dir} does not exist or is not a directory.")
     state["base_dir"] = base_dir
 
-    if not init():
-        for e in errors:
-            err_console.print(f"[red]error[/red]: {e}")
-        raise typer.Exit(code=error_code)
+    if not state["base_dir"].exists() and not state["base_dir"].is_dir():
+        log_error(
+            f"Base directory {state['base_dir']} does not exist or is not a directory."
+        )
+        return False
+
+    return init()
 
 
 if __name__ == "__main__":

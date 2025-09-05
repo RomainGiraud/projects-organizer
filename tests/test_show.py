@@ -24,7 +24,7 @@ def test_show_many_found(projects_dir):
     runner = CliRunner(mix_stderr=False)
     test_args = ["-d", projects_dir, "show", "project"]
     result = runner.invoke(app, test_args)
-    assert result.exit_code == 0
+    assert result.exit_code == 1
     assert result.stdout == "Many projects found: Project 1, Project 2, Project 3\n"
 
 

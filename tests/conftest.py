@@ -131,7 +131,7 @@ def projects_dir_duplicate_project(tmp_path_factory):
     projects_dup = copy.deepcopy(projects)
     projects_dup["project_dup"] = projects_dup["project1"]
     return create_projects_to_dir(
-        projects_dup, tmp_path_factory.mktemp("projects_with_empty")
+        projects_dup, tmp_path_factory.mktemp("projects_with_dup")
     )
 
 
