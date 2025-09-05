@@ -5,19 +5,19 @@ import yaml
 projects = {
     "project1": {
         "title": "Project 1",
-        "created_at": '2023-01-01',
+        "created_at": "2023-01-01",
         "archived": True,
-        "tags": ["dev", "python"]
+        "tags": ["dev", "python"],
     },
     "project2": {
         "title": "Project 2",
-        "created_at": '2024-01-01',
-        "tags": ["dev", "C++"]
+        "created_at": "2024-01-01",
+        "tags": ["dev", "C++"],
     },
     "project3": {
         "title": "Project 3",
-        "created_at": '2025-01-01',
-        "tags": ["dev", "python"]
+        "created_at": "2025-01-01",
+        "tags": ["dev", "python"],
     },
 }
 
@@ -37,10 +37,7 @@ schema = {
         },
         "tags": {
             "type": "array",
-            "items": {
-                "type": "string",
-                "enum": ["dev", "python", "C++"]
-            },
+            "items": {"type": "string", "enum": ["dev", "python", "C++"]},
         },
     },
     "required": ["title"],
@@ -63,10 +60,7 @@ schema_missing_tag = {
         },
         "tags": {
             "type": "array",
-            "items": {
-                "type": "string",
-                "enum": ["dev", "C++"]
-            },
+            "items": {"type": "string", "enum": ["dev", "C++"]},
         },
     },
     "required": ["title"],
@@ -87,10 +81,7 @@ schema_invalid = {
         },
         "tags": {
             "type": "array",
-            "items": {
-                "type": "string",
-                "enum": ["dev", "C++"]
-            },
+            "items": {"type": "string", "enum": ["dev", "C++"]},
         },
     },
     "required": ["title"],
@@ -124,26 +115,31 @@ def projects_dir(tmp_path_factory):
 
 @pytest.fixture(scope="session")
 def projects_dir_empty_project(tmp_path_factory):
-    dir = create_projects_to_dir(projects, tmp_path_factory.mktemp("projects_with_empty"))
+    dir = create_projects_to_dir(
+        projects, tmp_path_factory.mktemp("projects_with_empty")
+    )
     p_subdir = dir / "project_empty"
     if not p_subdir.exists():
         p_subdir.mkdir()
     return dir
 
+
 @pytest.fixture(scope="session")
 def projects_dir_duplicate_project(tmp_path_factory):
     import copy
+
     projects_dup = copy.deepcopy(projects)
     projects_dup["project_dup"] = projects_dup["project1"]
-    return create_projects_to_dir(projects_dup, tmp_path_factory.mktemp("projects_with_empty"))
+    return create_projects_to_dir(
+        projects_dup, tmp_path_factory.mktemp("projects_with_empty")
+    )
 
 
 def write_data_to_file(data, filename):
     with open(filename, "w") as f:
-        f.write(
-            yaml.dump(data, indent=2, default_flow_style=False, sort_keys=False)
-        )
+        f.write(yaml.dump(data, indent=2, default_flow_style=False, sort_keys=False))
     return filename
+
 
 @pytest.fixture(scope="session")
 def schema_file(projects_dir):

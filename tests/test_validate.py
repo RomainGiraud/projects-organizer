@@ -1,7 +1,5 @@
-import pytest
 from projects_organizer import app
 from typer.testing import CliRunner
-import yaml
 
 
 def test_validate(projects_dir, schema_file):
@@ -18,12 +16,18 @@ def test_validate_missing_tag(projects_dir, schema_file_missing_tag):
     result = runner.invoke(app, test_args)
     assert result.exit_code == 1
     assert result.stdout != "All projects are valid.\n"
-    assert len(result.stdout.strip().split('\n')) == 2
+    assert len(result.stdout.strip().split("\n")) == 2
 
 
 def test_validate_missing_tag_stop(projects_dir, schema_file_missing_tag):
     runner = CliRunner()
-    test_args = ["-d", str(projects_dir), "validate", str(schema_file_missing_tag), '-s']
+    test_args = [
+        "-d",
+        str(projects_dir),
+        "validate",
+        str(schema_file_missing_tag),
+        "-s",
+    ]
     result = runner.invoke(app, test_args)
     assert result.exit_code == 1
     assert result.stdout.startswith("error for project Project 1\n")

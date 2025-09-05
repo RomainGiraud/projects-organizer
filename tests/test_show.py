@@ -1,8 +1,6 @@
 import pytest
 from projects_organizer import app
 from typer.testing import CliRunner
-import yaml
-import json
 
 
 def test_show(projects_dir):
@@ -11,7 +9,7 @@ def test_show(projects_dir):
     test_args = ["-d", projects_dir, "show", pytest.projects[pfilename]["title"]]
     result = runner.invoke(app, test_args)
     assert result.exit_code == 0
-    assert result.stdout == str(pytest.projects[pfilename]) + '\n'
+    assert result.stdout == str(pytest.projects[pfilename]) + "\n"
 
 
 def test_show_not_found(projects_dir):
@@ -35,5 +33,5 @@ def test_show_verbose(projects_dir):
     test_args = ["-d", projects_dir, "-v", "show", "project 1"]
     result = runner.invoke(app, test_args)
     assert result.exit_code == 0
-    lines = result.stdout.strip().split('\n')
+    lines = result.stdout.strip().split("\n")
     assert "'title': 'project 1'" in lines[len(lines) - 1].lower()

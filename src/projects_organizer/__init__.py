@@ -38,9 +38,12 @@ app = typer.Typer(pretty_exceptions_enable=False)
 err_console = Console(stderr=True)
 
 error_code = 1
-errors = []
+errors: list[str] = []
+
+
 def log_error(msg: str):
     errors.append(msg)
+
 
 MD_FILE_DEFAULT = "index.md"
 
@@ -86,7 +89,10 @@ def init():
     return True
 
 
-def parse_filter(filter: str) -> tuple[CodeType, set[str]]:
+def parse_filter(filter: str | None) -> tuple[CodeType, set[str]] | tuple[None, None]:
+    if filter is None:
+        return None, None
+
     parsed = ast.parse(filter, mode="eval")
 
     if (
@@ -117,14 +123,13 @@ def list_projects(
         str | None, typer.Option("--filter", "-f", help="Filter by element")
     ] = None,
 ):
-    if filter is not None:
-        compiled, variables = parse_filter(filter)
+    compiled, variables = parse_filter(filter)
 
     for p in projects.values():
-        if filter is not None:
+        if compiled is not None and variables is not None:
             context: dict[str, Any] = {}  # pyright: ignore[reportExplicitAny]
             for v in variables:
-                if v == "datetime": # import datetime if used
+                if v == "datetime":  # import datetime if used
                     context[v] = datetime
                     continue
                 if v not in p["metadata"]:
@@ -226,4 +231,4 @@ def main_options(
 
 
 if __name__ == "__main__":
-    app() # pragma: no cover
+    app()  # pragma: no cover

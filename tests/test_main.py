@@ -1,7 +1,5 @@
-import pytest
 from projects_organizer import app, __version__
 from typer.testing import CliRunner
-import yaml
 
 
 def test_version():

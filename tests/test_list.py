@@ -1,7 +1,6 @@
 import pytest
 from projects_organizer import app
 from typer.testing import CliRunner
-import yaml
 
 
 def test_list_basic(projects_dir):
@@ -17,14 +16,17 @@ def test_list_basic_verbose(projects_dir):
     test_args = ["-d", projects_dir, "-v", "list"]
     result = runner.invoke(app, test_args)
     assert result.exit_code == 0
-    assert result.stdout == f"""Initializing projects from {str(projects_dir)}
-Reading file {str(projects_dir / 'project1' / 'index.md')}
-Reading file {str(projects_dir / 'project2' / 'index.md')}
-Reading file {str(projects_dir / 'project3' / 'index.md')}
+    assert (
+        result.stdout
+        == f"""Initializing projects from {str(projects_dir)}
+Reading file {str(projects_dir / "project1" / "index.md")}
+Reading file {str(projects_dir / "project2" / "index.md")}
+Reading file {str(projects_dir / "project3" / "index.md")}
 - Project 1
 - Project 2
 - Project 3
 """
+    )
 
 
 def test_list_empty_project(projects_dir_empty_project):
@@ -52,7 +54,10 @@ def test_list_duplicate_project(projects_dir_duplicate_project):
         ("not archived", "- Project 2\n- Project 3\n"),
         ("'dev' in tags", "- Project 1\n- Project 2\n- Project 3\n"),
         ("'python' in tags", "- Project 1\n- Project 3\n"),
-        ("datetime.strptime(created_at, '%Y-%m-%d') >= datetime(2024, 1, 1)", "- Project 2\n- Project 3\n"),
+        (
+            "datetime.strptime(created_at, '%Y-%m-%d') >= datetime(2024, 1, 1)",
+            "- Project 2\n- Project 3\n",
+        ),
     ],
 )
 def test_list_filter(filter, expected, projects_dir):
