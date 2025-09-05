@@ -1,6 +1,14 @@
 # CHANGELOG
 
 
+## v0.4.0 (2025-09-05)
+
+### Features
+
+- Add documentation
+  ([`77243a6`](https://github.com/RomainGiraud/projects-organizer/commit/77243a6fbdcab784872ca09edd5e5815f2697aef))
+
+
 ## v0.3.0 (2025-09-05)
 
 ### Bug Fixes
